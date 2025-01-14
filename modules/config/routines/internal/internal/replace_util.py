@@ -23,7 +23,8 @@ def replace(mode:       int,
             repl_key:   str,
             repl_kv:    str,
             host_key:   str,
-            host_data): #dictionary representing host_data yaml
+            host_data,
+            default_data):
     try: 
         with open(rel_f_path, "r") as file:
             lines = file.readlines() 
@@ -35,10 +36,18 @@ def replace(mode:       int,
     for i in range(len(lines)):
         if mode == 1:
             if repl_kv in lines[i]:
-                lines[i] = host_data[host_key]
+                val = host_data.get(host_key, None)
+                if val is None:
+                    val = default_data.get(host_key, None)
+                    if val is None:
+                        print(f"[ERR] Missing default value for deployment.")
+                        return
+                lines[i] = val
         else: #backup
             if repl_key in lines[i]:
                 host_data[host_key] = lines[i]
+                if default_data.get(host_key, None) is None:
+                    default_data[host_key] = lines[i]
                 lines[i] = repl_kv 
 
     try:

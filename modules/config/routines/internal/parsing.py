@@ -54,10 +54,19 @@ on success:
 on failure:
   returns None.
 """""""""""""""""""""""""""""""""""""""""""""""""""
-def _check_specifics(mode, sys_path, links_path, spec_file_repl, spec_repl_dict, host_data, unexpanded_path):
-    if host_data is None and mode == 1 and len(spec_file_repl) > 0:
-        print(f"[ERR] No host data stored! Ending search for {spec_file_repl}")
-        return None
+def _check_specifics(mode, 
+                     sys_path, 
+                     links_path, 
+                     unexpanded_path, 
+                     spec_file_repl, 
+                     spec_repl_dict, 
+                     host_data, 
+                     default_data):
+    if mode == 1 and host_data is None and len(spec_file_repl) > 0:
+        #we need to check if a default exists
+        if default_data is None: 
+            print(f"[ERR] No default host_data stored. Manual intervention is required for {spec_file_repl}")
+            return None
 
     #check path types
     if not isinstance(sys_path, str) or not isinstance(links_path, str):
@@ -108,9 +117,6 @@ def _check_specifics(mode, sys_path, links_path, spec_file_repl, spec_repl_dict,
                 else:
                     repl_f_path = join(links_path, file)
 
-            #get what $HOME is equivalent to
-            print(spec_key)
-
             specifics = spec_repl_dict.get(spec_key, None)
 
             #check an entry exists for it in specific_replacements
@@ -131,7 +137,11 @@ def _check_specifics(mode, sys_path, links_path, spec_file_repl, spec_repl_dict,
                         if data is None:
                             print(f"[WARN] {replacement} does not have a host-specific value stored already." 
                                    "Performing a backup can help auto-generate the entry.")
-                            continue 
+                            data = default_data.get(host_key, None)
+                            if data is None:
+                                print(f"[ERR] {replacement} does not have default value stored. Copy from"
+                                      f"{copies.to_path} => {copies.from_path} cannot be safely performed." 
+                                       "Skipping...")
                      
                     copies.file_specs.append( (repl_f_path, repl_key, repl_kv, host_key) )
 
@@ -174,23 +184,37 @@ CopyData:
   operations that need to happen. 
 """""""""""""""""""""""""""""""""""""""""""""""""""
 class CopyData:
-    mode        = 0
-    su          = False 
-    copies      = [] #validated copies
-    host_data   = None
-    host_path   = ""
+    mode         = 0
+    su           = False
+    copies       = [] #validated copies
+    host_data    = None
+    default_data = None
+    host_path    = ""
+    default_path = ""
 
-    def __init__(self, mode, su, copies, specific_replacements_dict, host_path):
-        self.mode      = mode
-        self.su        = su
-        self.host_path = host_path 
+    def __init__(self, 
+                 mode, 
+                 su, 
+                 copies, 
+                 specific_replacements_dict, 
+                 host_path,
+                 default_path):
+        self.mode         = mode
+        self.su           = su
+        self.host_path    = host_path
+        self.default_path = default_path
 
         if exists(host_path):
             with open(host_path, "r") as file:
                 self.host_data = safe_load(file)
+        if default_path != "" and exists(default_path):
+            with open(default_path, "r") as file:
+                self.default_data = safe_load(file)
      
         if self.host_data is None:
             self.host_data = {}
+        if self.default_data is None:
+            self.default_data = {}
 
         #import copies & replacements
         for sys_path, links_path, specific_file_replacements in copies:
@@ -212,14 +236,19 @@ class CopyData:
             copy_spec = _check_specifics(self.mode, 
                                          expanded_sys, 
                                          expanded_links, 
+                                         links_path,
                                          specific_file_replacements, 
                                          specific_replacements_dict, 
                                          self.host_data,
-                                         links_path)
+                                         self.default_data)
             self.copies.append(copy_spec)
 
     def __del__(self):
         if isinstance(self.host_data, (dict, list)):
             with open(self.host_path, "w") as file:
                 file.write(dump(self.host_data))
+        if isinstance(self.default_data, (dict, list)) and self.default_path != "":
+            with open(self.default_path, "w") as file:
+                print(self.default_path)
+                file.write(dump(self.default_data))
 

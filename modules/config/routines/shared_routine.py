@@ -16,8 +16,14 @@ def shared_main(su: bool):
     cfg_path  = args[2]
     host_path = args[3]
 
+    default_path = ""
+    try:
+        default_path = args[4]
+    except:
+        pass
+
     copies, spec_replacements = read_config(su, cfg_path) 
-    copy_data = CopyData(mode, su, copies, spec_replacements, host_path)
-    ret = copy_configs(mode, copy_data.host_data, copy_data.copies) 
+    copy_data = CopyData(mode, su, copies, spec_replacements, host_path, default_path)
+    ret = copy_configs(mode, copy_data.copies, copy_data.host_data, copy_data.default_data) 
     if not ret:
       return -1 

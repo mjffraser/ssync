@@ -13,7 +13,7 @@ __CONFIG_VERSION__
   - shared_routine.py 
   - internal/*
 """""""""""""""""""""""""""""""""""""""""""""""""""
-__CONFIG_VERSION__ = "v1.0-5"
+__CONFIG_VERSION__ = "v1.1-4"
 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""
@@ -28,7 +28,7 @@ on failure:
 def _compile(py_file, r_type):
     try:
         print(f"[LOG] Compiling {r_type} routine...")
-        run(["nuitka", "--onefile", "--follow-imports", f"{py_file}"], text=True, check=True, stderr=DEVNULL, stdout=DEVNULL)
+        run(["nuitka", "--onefile", "--follow-imports", f"{py_file}"], text=True, check=True) #, stderr=DEVNULL, stdout=DEVNULL
         run(["rm", "-r", f"{r_type}.build", f"{r_type}.dist", f"{r_type}.onefile-build"])
         print("[LOG] done.")
     except:
@@ -99,7 +99,7 @@ on success:
 on failure:
   returns False
 """""""""""""""""""""""""""""""""""""""""""""""""""
-def copy_configs(mode, ssync_dir, cwd, cfg_path, host_path):
+def copy_configs(mode, ssync_dir, cwd, cfg_path, host_path, default_path):
     user_routine = "user.py"
     su_routine   = "su.py"
 
@@ -119,8 +119,8 @@ def copy_configs(mode, ssync_dir, cwd, cfg_path, host_path):
         _remove_elevated_perms()
 
     #mode was verified by sync.py
-    run(["./user.bin", str(mode), cfg_path, host_path])
-    run(["./su.bin",   str(mode), cfg_path, host_path])
+    run(["./user.bin", str(mode), cfg_path, host_path, default_path])
+    run(["./su.bin",   str(mode), cfg_path, host_path, default_path])
     
     #exit out
     chdir(cwd)

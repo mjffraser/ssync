@@ -23,7 +23,7 @@ on success:
 on failure:
   returns False
 """""""""""""""""""""""""""""""""""""""""""""""""""
-def copy_configs(mode, host_data, copies):
+def copy_configs(mode, copies, host_data, default_data):
     if not isinstance(copies, List):
         print("[ERR] Provided list of copies is not formatted correctly as CopySpec objects.")
         return False
@@ -39,6 +39,6 @@ def copy_configs(mode, host_data, copies):
 
         #spec replacements
         for rel_f_path, repl_key, repl_kv, host_key in cp.file_specs:
-            replace(mode, rel_f_path, repl_key, repl_kv, host_key, host_data)
+            replace(mode, rel_f_path, repl_key, repl_kv, host_key, host_data, default_data)
 
     return True

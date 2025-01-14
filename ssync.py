@@ -112,9 +112,11 @@ def main():
     ssync_cfg = ssync_dir + "/config.yaml"
     with open(ssync_cfg, "r") as cfg:
         config = safe_load(cfg) 
-    copy_config = ""
-    pkg_config  = ""
-    host_path   = expandvars(config.get("host-data-path", "$HOME/.config/ssync-host-data.yaml"))  
+
+    copy_config  = ""
+    pkg_config   = ""
+    host_path    = expandvars(config.get("host-data-path",     "$HOME/.config/ssync-host-data.yaml"))
+    default_path = expandvars(config.get("default-host-data", ""                                  ))
 
     #checks before we execute any modules
     dirty = 0
@@ -143,11 +145,16 @@ def main():
 
     #config module
     if _sync_configs:
-        copy_configs(_mode, ssync_dir, cwd, copy_config, host_path)
+        copy_configs(_mode, 
+                     ssync_dir, 
+                     cwd, 
+                     copy_config, 
+                     host_path, 
+                     default_path)
 
     #packages module
     if _sync_packages:
-        print(pkg_config)
+        pass
 
 if __name__ == "__main__":
     main();
