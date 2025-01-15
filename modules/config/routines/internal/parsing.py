@@ -1,7 +1,10 @@
-from os.path     import expandvars, expanduser, join, exists
 from dataclasses import dataclass, field
-from yaml        import safe_load, dump
 from typing      import List, Tuple
+
+import os, yaml
+
+#log tools is inserted into path before this comes into scope
+from log_tools import err, warn 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""
 CopySpec:
@@ -65,7 +68,7 @@ def _check_specifics(mode,
     if mode == 1 and host_data is None and len(spec_file_repl) > 0:
         #we need to check if a default exists
         if default_data is None: 
-            print(f"[ERR] No default host_data stored. Manual intervention is required for {spec_file_repl}")
+            err(f"No default host_data stored. Manual intervention is required for {spec_file_repl}")
             return None
 
     #check path types
@@ -74,12 +77,12 @@ def _check_specifics(mode,
 
     #verify something exists to copy
     if mode == 1: #deploy
-        if not exists(links_path):
-            print(f"[ERR] Path: {links_path} appears to not exist?")
+        if not os.path.exists(links_path):
+            err(f"Path: {links_path} appears to not exist?")
             return None 
     else: #backup
-        if not exists(sys_path):
-            print(f"[ERR] Path: {sys_path} appears to not exist?")
+        if not os.path.exists(sys_path):
+            err(f"Path: {sys_path} appears to not exist?")
             return None
 
     #now we setup the copies that need to happen
@@ -98,7 +101,7 @@ def _check_specifics(mode,
     if len(spec_file_repl) > 0:
         for file in spec_file_repl:
             if not isinstance(file, str):
-                print(f"[WARN] {file} appears to not be a string?")
+                warn(f"{file} appears to not be a string?")
                 continue
             
             #this is not a directory copy, but a single file, so target that file
@@ -111,11 +114,11 @@ def _check_specifics(mode,
 
             #directory copy, so build the path to the file
             else:
-                spec_key = join(unexpanded_path, file)
+                spec_key = os.path.join(unexpanded_path, file)
                 if mode == 1:
-                    repl_f_path = join(sys_path, file)
+                    repl_f_path = os.path.join(sys_path, file)
                 else:
-                    repl_f_path = join(links_path, file)
+                    repl_f_path = os.path.join(links_path, file)
 
             specifics = spec_repl_dict.get(spec_key, None)
 
@@ -124,7 +127,7 @@ def _check_specifics(mode,
                 for replacement in specifics:
                     #we have file path already in file_name
                     if len(replacement) != 2:
-                        print(f"[WARN] {replacement} does not contain key/val pair? Len:{len(replacement)}")
+                        warn(f"{replacement} does not contain key/val pair? Len:{len(replacement)}")
                         continue 
                     
                     repl_key = replacement[0]
@@ -135,11 +138,11 @@ def _check_specifics(mode,
                     if mode == 1:
                         data = host_data.get(host_key, None)
                         if data is None:
-                            print(f"[WARN] {replacement} does not have a host-specific value stored already." 
+                            warn(f"{replacement} does not have a host-specific value stored already." 
                                    "Performing a backup can help auto-generate the entry.")
                             data = default_data.get(host_key, None)
                             if data is None:
-                                print(f"[ERR] {replacement} does not have default value stored. Copy from"
+                                err(f"{replacement} does not have default value stored. Copy from"
                                       f"{copies.to_path} => {copies.from_path} cannot be safely performed." 
                                        "Skipping...")
                      
@@ -160,7 +163,7 @@ returns:
 def read_config(su: bool, cfg_path):
     #open config file
     with open(cfg_path, "r") as file:
-        data = safe_load(file)
+        data = yaml.safe_load(file)
 
     #read copies from config
     if "config" not in data:
@@ -204,12 +207,12 @@ class CopyData:
         self.host_path    = host_path
         self.default_path = default_path
 
-        if exists(host_path):
+        if os.path.exists(host_path):
             with open(host_path, "r") as file:
-                self.host_data = safe_load(file)
-        if default_path != "" and exists(default_path):
+                self.host_data = yaml.safe_load(file)
+        if default_path != "" and os.path.exists(default_path):
             with open(default_path, "r") as file:
-                self.default_data = safe_load(file)
+                self.default_data = yaml.safe_load(file)
      
         if self.host_data is None:
             self.host_data = {}
@@ -219,17 +222,17 @@ class CopyData:
         #import copies & replacements
         for sys_path, links_path, specific_file_replacements in copies:
             if not isinstance(sys_path, str):
-                print(f"[ERR] {sys_path} is not a valid string.")
+                err(f"{sys_path} is not a valid string.")
                 continue
             if not isinstance(links_path, str):
-                print(f"[ERR] {links_path} is not a valid string.")
+                err(f"{links_path} is not a valid string.")
                 continue 
             if not isinstance(specific_file_replacements, list):
-                print(f"[ERR] {specific_file_replacements} is not a valid list of strings. An empty list is required for no spec. copies.")
+                err(f"{specific_file_replacements} is not a valid list of strings. An empty list is required for no spec. copies.")
                 continue
 
-            expanded_sys   = expandvars(sys_path)
-            expanded_links = expandvars(links_path)
+            expanded_sys   = os.path.expandvars(sys_path)
+            expanded_links = os.path.expandvars(links_path)
 
             if sys_path not in _authorized_sudo_copies and self.su:
                 continue
@@ -246,9 +249,8 @@ class CopyData:
     def __del__(self):
         if isinstance(self.host_data, (dict, list)):
             with open(self.host_path, "w") as file:
-                file.write(dump(self.host_data))
+                file.write(yaml.dump(self.host_data))
         if isinstance(self.default_data, (dict, list)) and self.default_path != "":
             with open(self.default_path, "w") as file:
-                print(self.default_path)
-                file.write(dump(self.default_data))
+                file.write(yaml.dump(self.default_data))
 

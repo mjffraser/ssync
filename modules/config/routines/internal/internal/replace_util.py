@@ -1,3 +1,6 @@
+#log tools is inserted into path before this comes into scope
+from log_tools import err 
+
 """""""""""""""""""""""""""""""""""""""""""""""""""
 replace:
   function to do specific replacements for files.
@@ -29,8 +32,8 @@ def replace(mode:       int,
         with open(rel_f_path, "r") as file:
             lines = file.readlines() 
     except Exception as e:
-        print(f"[ERR] An error occured opening and reading from \'{rel_f_path}\'. Is is readable?")
-        print(e)
+        err(f"An error occured opening and reading from \'{rel_f_path}\'. Is is readable?")
+        err(str(e))
         return 
  
     for i in range(len(lines)):
@@ -40,7 +43,7 @@ def replace(mode:       int,
                 if val is None:
                     val = default_data.get(host_key, None)
                     if val is None:
-                        print(f"[ERR] Missing default value for deployment.")
+                        err("Missing default value for deployment.")
                         return
                 lines[i] = val
         else: #backup
@@ -54,6 +57,6 @@ def replace(mode:       int,
         with open(rel_f_path, "w") as file:
             file.writelines(lines)
     except Exception as e:
-        print(f"[ERR] An error occured opening and writing back to \'{rel_f_path}\'. Is it writable?")
-        print(e)
+        err(f"An error occured opening and writing back to \'{rel_f_path}\'. Is it writable?")
+        err(str(e))
         return

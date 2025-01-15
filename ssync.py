@@ -1,9 +1,6 @@
-from sys     import argv
-from os.path import dirname, abspath, exists, isfile, expandvars
-from os      import getcwd
-from yaml    import safe_load
+import os, sys, yaml
 
-from modules.config.run import copy_configs
+from env_pkg.log_tools  import warn, err
 
 """""""""""""""""""""""""""""""""""""""""""""""""""
 mode (required)
@@ -52,7 +49,7 @@ _parse_option
 """""""""""""""""""""""""""""""""""""""""""""""""""
 def _parse_option(arg: str):
     if len(arg) < 2:
-        print(f"[WARN] No options supplied after the '-'")
+        warn(f"No options supplied after the '-'")
         return
 
     global _mode, _sync_configs, _sync_packages
@@ -62,7 +59,7 @@ def _parse_option(arg: str):
         elif c == "d": _mode          += 2
         elif c == "c": _sync_configs   = True
         elif c == "p": _sync_packages  = True
-        else: print(f"[WARN] Option {c} not recognized.")
+        else: warn(f"Option {c} not recognized.")
 
 """""""""""""""""""""""""""""""""""""""""""""""""""
 _parse_args
@@ -71,9 +68,9 @@ _parse_args
 """""""""""""""""""""""""""""""""""""""""""""""""""
 def _parse_args():
     global _mode, _sync_configs, _sync_packages
-    args = argv #sys.argv
+    args = sys.argv 
     if len(args) < 2:
-        print("[ERR] No copy mode specified!")
+        err("No copy mode specified!")
         _usage_err()
    
     #process args until we error for any reason (no arg, problematic arg)
@@ -91,7 +88,7 @@ def _parse_args():
             elif arg_str.startswith("-"):
                 _parse_option(arg_str)
             else: 
-                print(f"[WARN] Argument {arg_str} not recognized.") 
+                warn(f"Argument {arg_str} not recognized.") 
         except: 
             #catches err when we do args[i] with too large an i
             #therefore no more args to process
@@ -100,47 +97,56 @@ def _parse_args():
 def main():
     _parse_args() 
     if _mode < 0:
-        print("[ERR] No valid mode provided.")
+        err("No valid mode provided.")
         _usage_err()
 
     if _mode > 1:
-        print("[ERR] Both deploy and backup mode selected.")
+        err("Both deploy and backup mode selected.")
         _usage_err()
 
-    cwd       = abspath(getcwd())
-    ssync_dir = dirname(abspath(__file__))
+    cwd       = os.path.abspath(os.getcwd())
+    ssync_dir = os.path.dirname(os.path.abspath(__file__))
+
+    #add global logging functions to path temporarily so all other modules can find them
+    global_path_dir = ssync_dir + "/env_pkg/"
+    sys.path.append(global_path_dir)
+
+    #now import with updated path
+    from modules.config.run import copy_configs
+
+
     ssync_cfg = ssync_dir + "/config.yaml"
     with open(ssync_cfg, "r") as cfg:
-        config = safe_load(cfg) 
+        config = yaml.safe_load(cfg) 
 
     copy_config  = ""
     pkg_config   = ""
-    host_path    = expandvars(config.get("host-data-path",     "$HOME/.config/ssync-host-data.yaml"))
-    default_path = expandvars(config.get("default-host-data", ""                                  ))
+    host_path    = os.path.expandvars(config.get("host-data-path",    "$HOME/.config/ssync-host-data.yaml"))
+    default_path = os.path.expandvars(config.get("default-host-data", ""                                  ))
 
     #checks before we execute any modules
     dirty = 0
     if _sync_configs:
-        copy_config   = expandvars(config.get("copy-config-path", "$HOME/.config/ssync-copy-config.yaml"))
-        if not exists(copy_config):
-            print(f"[WARN] Copy-configs config file at supplied path {copy_config} appears to not exist?")
+        copy_config   = os.path.expandvars(config.get("copy-config-path", "$HOME/.config/ssync-copy-config.yaml"))
+        if not os.path.exists(copy_config):
+            warn(f"Copy-configs config file at supplied path {copy_config} appears to not exist?")
             dirty += 1
-        if not isfile(copy_config):
-            print(f"[WARN] Copy-configs config file at supplied path {copy_config} appears to not be a file?")
+        if not os.path.isfile(copy_config):
+            warn(f"Copy-configs config file at supplied path {copy_config} appears to not be a file?")
             dirty += 1
 
     if _sync_packages:
-        pkg_config = expandvars(config.get("copy-package-path", "$HOME/.config/ssync-pkg-config.yaml"))
-        if not exists(pkg_config):
-            print(f"[WARN] Copy-packages config file at supplied path {pkg_config} appears to not exist?")
+        pkg_config = os.path.expandvars(config.get("copy-package-path", "$HOME/.config/ssync-pkg-config.yaml"))
+        if not os.path.exists(pkg_config):
+            warn(f"Copy-packages config file at supplied path {pkg_config} appears to not exist?")
             dirty += 1
-        if not isfile(pkg_config):
-            print(f"[WARN] Copy-packages config file at supplied path {pkg_config} appears to not be a file?")
+        if not os.path.isfile(pkg_config):
+            warn(f"Copy-packages config file at supplied path {pkg_config} appears to not be a file?")
             dirty += 1
 
     
     if dirty > 0:
-        print("[ERR] Critical configs are missing. Cannot proceed.")
+        err("Critical configs are missing. Cannot proceed.")
         exit()
 
     #config module
@@ -150,7 +156,8 @@ def main():
                      cwd, 
                      copy_config, 
                      host_path, 
-                     default_path)
+                     default_path,
+                     global_path_dir)
 
     #packages module
     if _sync_packages:

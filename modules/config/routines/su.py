@@ -1,6 +1,11 @@
 from shared_routine import shared_main
 
+import sys
+import os
+
 if __name__ == "__main__":
-    print("[LOG] Doing su copies...")
+    sys.path.append(os.environ["PYTHONPATH"]) 
+    from log_tools import log
+    log("Doing su copies...")
     shared_main(True)
 

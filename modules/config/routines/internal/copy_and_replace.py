@@ -1,7 +1,10 @@
-from typing            import List
-from .parsing           import CopySpec
+from typing                 import List
+from .parsing               import CopySpec
 from .internal.copy_util    import copy
 from .internal.replace_util import replace
+
+#log tools is inserted into path before this comes into scope
+from log_tools import log, err
 
 """""""""""""""""""""""""""""""""""""""""""""""""""
 copy_configs
@@ -25,14 +28,15 @@ on failure:
 """""""""""""""""""""""""""""""""""""""""""""""""""
 def copy_configs(mode, copies, host_data, default_data):
     if not isinstance(copies, List):
-        print("[ERR] Provided list of copies is not formatted correctly as CopySpec objects.")
+        err("Provided list of copies is not formatted correctly as CopySpec objects.")
         return False
+
     for cp in copies:
         if not isinstance(cp, CopySpec):
-            print("[ERR] Copy in list is not CopySpec object.")
+            err("Copy in list is not CopySpec object.")
             continue
         
-        print(f"[LOG] {cp.from_path} => {cp.to_path}")
+        log(f"{cp.from_path} => {cp.to_path}")
 
         #do the cp
         copy(cp.from_path, cp.to_path) 
