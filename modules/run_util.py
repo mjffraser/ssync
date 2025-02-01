@@ -34,7 +34,7 @@ on failure:
 """""""""""""""""""""""""""""""""""""""""""""""""""
 def chown_root(file: str) -> bool:
     try:
-        log("Changing routine owner to root...")
+        log("Changing file owner to root...")
         subprocess.run(["sudo", "chown", "root:root", f"{file}"], check=True)
         log("done")
     except:
@@ -61,6 +61,7 @@ def drop_perms() -> bool:
     return True
 
 def store_ver(ver: str) -> bool:
+    log("Creating version file...")
     if os.path.exists(ver):
         return True
     try:

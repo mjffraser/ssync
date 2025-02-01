@@ -112,8 +112,8 @@ def main():
     sys.path.append(global_path_dir)
 
     #now import with updated path
-    from modules.config.run import copy_configs
-
+    from modules.config.run   import copy_configs
+    from modules.packages.run import sync_packages
 
     ssync_cfg = ssync_dir + "/config.yaml"
     with open(ssync_cfg, "r") as cfg:
@@ -161,7 +161,12 @@ def main():
 
     #packages module
     if _sync_packages:
-        pass
+        sync_packages(_mode, 
+                      ssync_dir, 
+                      cwd, 
+                      pkg_config, 
+                      host_path,
+                      global_path_dir)
 
 if __name__ == "__main__":
     main();

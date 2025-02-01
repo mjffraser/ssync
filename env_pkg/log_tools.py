@@ -10,7 +10,8 @@ class _colors:
 def _punctuate(msg: str) -> str:
     if (not msg.endswith(".") and
         not msg.endswith("?") and
-        not msg.endswith("!")):
+        not msg.endswith("!") and
+        not msg.endswith(":")):
         msg += "."
     return msg
 
