@@ -124,8 +124,8 @@ def do_sync(mode:        int,
             subprocess.run(["sudo", "pacman", "-Syu"])
 
         log("Installing normal packages:")
-        subprocess.run(["sudo", "pacman", "-S", "--needed", normal_pkg_str])
+        subprocess.run(["sudo", "pacman", "-S", "--needed", *normal_pkg_str])
         log("Installing foreign packages:")
-        subprocess.run(["yay", "-S", "--needed", aur_pkg_str])
+        subprocess.run(["yay", "-S", "--needed", *aur_pkg_str])
 
     log("done.")
