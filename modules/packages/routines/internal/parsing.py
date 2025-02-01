@@ -116,16 +116,13 @@ def do_sync(mode:        int,
 
     #deploy
     else:
-        normal_pkg_str = ' '.join(normal_pkg)
-        aur_pkg_str    = ' '.join(aur_pkg)
-
         res = input("\033[94mSkip -Syu? [y/N]\033[0m").lower() 
         if res != 'y':
             subprocess.run(["sudo", "pacman", "-Syu"])
 
         log("Installing normal packages:")
-        subprocess.run(["sudo", "pacman", "-S", "--needed", *normal_pkg_str])
+        subprocess.run(["sudo", "pacman", "-S", "--needed", *normal_pkg])
         log("Installing foreign packages:")
-        subprocess.run(["yay", "-S", "--needed", *aur_pkg_str])
+        subprocess.run(["yay", "-S", "--needed", *aur_pkg])
 
     log("done.")
